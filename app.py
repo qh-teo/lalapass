@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QPushButton, QMe
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import pyqtSlot
 from database import init_db
-from login import login
+from create_acc import login
 
 
 class App(QMainWindow):

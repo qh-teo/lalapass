@@ -2,7 +2,7 @@ import getpass
 import bcrypt
 from database import create_master
 
-def login(username,password):
+def create_acc(username,password):
     # username = input("Please enter your username: ")
     # user = input("Username [%s]: " % getpass.getuser())
     # print(getpass.getuser() + user)

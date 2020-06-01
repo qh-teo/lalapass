@@ -49,8 +49,8 @@ class MainWindow(QMainWindow):
     def logging_in(self):
         user_value = self.login.userEntry.text()
         pw_value = self.login.passEntry.text()
-        login_verification(user_value,pw_value)
-
+        loginSuccess = login_verification(user_value,pw_value)
+        print(loginSuccess)
 
 if __name__ == '__main__':
     init_db()

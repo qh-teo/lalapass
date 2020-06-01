@@ -25,24 +25,16 @@ def create_master(username, hashed_pw, salt):
     print(c.fetchall())
     conn.commit()
 
+
 def login_verification(username, password):
-    print(username)
-    print(password)
     c.execute("SELECT * FROM userAccount WHERE username=?", (username,))
     account_details = c.fetchone()
     conn.commit()
-    # account_details = c.fetchall()
-    print(account_details)
-    # print(c.fetchall())
-    if bcrypt.checkpw(password.encode('utf8'), account_details[3]):
-        print("Login Success")
-    else:
-        print("Failed")
-    # repass = input("Please relogin: ")
-    # # hashedrepass = bcrypt.hashpw(repass.encode('utf8'), acc_array[2])
-    # # print(hashedrepass)
-    # # print(acc_array[1])
-    # if bcrypt.checkpw(repass.encode('utf8'), acc_array[1]):
-    #     print("match")
+
+    # if bcrypt.checkpw(password.encode('utf8'), account_details[2]):
+    #     print("Login Success")
+    # else:
+    #     print("Failed")
+    return bcrypt.checkpw(password.encode('utf8'), account_details[2])
 
 

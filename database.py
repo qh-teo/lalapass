@@ -6,20 +6,27 @@ c = conn.cursor()
 
 def init_db():
     c.execute("""CREATE TABLE IF NOT EXISTS userAccount(
-          id integer primary key autoincrement,
-          username TEXT NOT NULL,
+          id INTEGER primary key autoincrement,
+          username  TEXT NOT NULL,
           hashed_pw CHAR(60) NOT NULL,
           salt CHAR(60) NOT NULL
           )""")
     conn.commit()
-    # hashed_password CHAR(60) NOT NULL,
-    # salt CHAR(60) NOT NULL
+
+    c.execute("""CREATE TABLE IF NOT EXISTS accounts(
+              id INTEGER primary key  autoincrement,
+              account_user TEXT NOT NULL,
+              account_pw TEXT NOT NULL,
+              account_type TEXT NOT NULL
+              )""")
+        # user_id INTEGER,
+        # FOREIGN KEY(user_id) REFERENCES userAccount(id)
+    conn.commit()
 
 
 def create_master(username, hashed_pw, salt):
     c.execute("INSERT INTO userAccount (id,username,hashed_pw,salt)VALUES (?,?,?,?)",
               (None, username, hashed_pw, salt,))
-    # print("done")
     conn.commit()
     c.execute("SELECT * FROM userAccount")
     print(c.fetchall())
@@ -31,10 +38,6 @@ def login_verification(username, password):
     account_details = c.fetchone()
     conn.commit()
 
-    # if bcrypt.checkpw(password.encode('utf8'), account_details[2]):
-    #     print("Login Success")
-    # else:
-    #     print("Failed")
     return bcrypt.checkpw(password.encode('utf8'), account_details[2])
 
 

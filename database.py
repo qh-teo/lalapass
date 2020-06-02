@@ -40,4 +40,7 @@ def login_verification(username, password):
 
     return bcrypt.checkpw(password.encode('utf8'), account_details[2])
 
-
+def create_profile(username, password, profile):
+    c.execute("INSERT INTO accounts (id,account_user,account_pw,account_type)VALUES (?,?,?,?)",
+              (None, username, password, profile,))
+    conn.commit()

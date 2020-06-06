@@ -7,6 +7,23 @@ from login_pg import login_pg
 from registerAccount_pg import registerAccount_pg
 from accountManager_pg import accountManager_pg
 from addProfile_pg import addProfile_pg
+import base64
+from cryptography.fernet import Fernet
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
+adminMenu = None
+
+class User_account:
+    def __init__(self, user_id, encryptionKey):
+        self.user_id = user_id
+        self.encryptionKey = encryptionKey
+
+    @property
+    def getEncryptionKey(self):
+        return self.encryptionKey
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -14,32 +31,33 @@ class MainWindow(QMainWindow):
         uic.loadUi("ui_folder\mainwindow.ui", self)
 
         # set up welcome page page
-        self.welcome = welcome_pg()
-        self.stackedWidget.addWidget(self.welcome)
-        self.welcome.loginButton.clicked.connect(self.go_to_login)
-        self.welcome.registerButton.clicked.connect(self.go_to_register)
+        self.welcome_pg = welcome_pg()
+        self.stackedWidget.addWidget(self.welcome_pg)
+        self.welcome_pg.loginButton.clicked.connect(self.go_to_login)
+        self.welcome_pg.registerButton.clicked.connect(self.go_to_register)
 
         # set up register account page
-        self.registerAccount = registerAccount_pg()
-        self.stackedWidget.addWidget(self.registerAccount)
-
-        self.registerAccount.registerAcc_but.clicked.connect(self.registering)
+        self.registerAccount_pg = registerAccount_pg()
+        self.stackedWidget.addWidget(self.registerAccount_pg)
+        self.registerAccount_pg.registerAcc_but.clicked.connect(self.registering)
 
         # set up login page
-        self.login = login_pg()
-        self.stackedWidget.addWidget(self.login)
-        self.login.login_but.clicked.connect(self.logging_in)
+        self.login_pg = login_pg()
+        self.stackedWidget.addWidget(self.login_pg)
+        self.login_pg.login_but.clicked.connect(self.logging_in)
 
         # set up account manager page
-        self.accountManager = accountManager_pg()
-        self.stackedWidget.addWidget(self.accountManager)
-        self.accountManager.addProfileButton.clicked.connect(self.go_to_addProfile)
+        self.accountManager_pg = accountManager_pg()
+        self.stackedWidget.addWidget(self.accountManager_pg)
 
+        self.accountManager_pg.addProfileButton.clicked.connect(self.go_to_addProfile)
 
         # set up add profile page
-        self.addProfile = addProfile_pg()
-        self.stackedWidget.addWidget(self.addProfile)
-        self.addProfile.submitButton.clicked.connect(self)
+        self.addProfile_pg = addProfile_pg()
+        self.stackedWidget.addWidget(self.addProfile_pg)
+        self.addProfile_pg.submitButton.clicked.connect(self.add_profile)
+
+    # Navigational Methods
 
     def go_to_first(self):
         self.stackedWidget.setCurrentIndex(0)
@@ -57,34 +75,53 @@ class MainWindow(QMainWindow):
         self.stackedWidget.setCurrentIndex(4)
 
     def registering(self):
-        user_value = self.registerAccount.userEntry.text()
-        pw_value = self.registerAccount.passEntry.text()
-        repass_value = self.registerAccount.repassEntry.text()
+        user_value = self.registerAccount_pg.userEntry.text()
+        pw_value = self.registerAccount_pg.passEntry.text()
+        repass_value = self.registerAccount_pg.repassEntry.text()
 
         if pw_value != repass_value:
             QMessageBox.question(self, "Error", "Passwords do not match. Please try again.", QMessageBox.Ok)
-            self.registerAccount.passEntry.clear()
-            self.registerAccount.repassEntry.clear()
+            self.registerAccount_pg.passEntry.clear()
+            self.registerAccount_pg.repassEntry.clear()
         else:
             create_acc(user_value, pw_value)
             QMessageBox.question(self, "Account Created", "Please login to access features.", QMessageBox.Ok)
             self.go_to_first()
 
-    def logging_in(self):
-        user_value = self.login.userEntry.text()
-        pw_value = self.login.passEntry.text()
-        loginSuccess = login_verification(user_value,pw_value)
-        # print(loginSuccess)
+    # Log in and verification methods
 
-        if loginSuccess == True:
+    def logging_in(self):
+        user_value = self.login_pg.userEntry.text()
+        pw_value = self.login_pg.passEntry.text()
+        loginSuccess = login_verification(user_value, pw_value)
+        if loginSuccess[0] is True:
+            encryptionKey = self.generateEncryptionKey(user_value, pw_value, loginSuccess[2])
+            global adminMenu
+            adminMenu = User_account(loginSuccess[1], encryptionKey)
+            print("Encryption key completed")
             self.go_to_accountManager()
 
-    def add_profile(self):
-        user_value = self.addProfile.userEntry.text()
-        pw_value = self.addProfile.passEntry.text()
-        profile_type = self.addProfile.protypeEntry.text()
-        create_profile(user_value, pw_value, profile_type)
+    def generateEncryptionKey(self, user, pw, salt):
+        password = pw + user
+        byte_pw = bytes(password.encode('utf8'))
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=100000,
+            backend=default_backend()
+        )
+        key = base64.urlsafe_b64encode(kdf.derive(byte_pw))
+        return key
 
+    def add_profile(self):
+        user_value = self.addProfile_pg.userEntry.text()
+        pw_value = self.addProfile_pg.passEntry.text()
+        profile_type = self.addProfile_pg.protypeEntry.text()
+        byte_pw = bytes(pw_value.encode('utf8'))
+        f = Fernet(adminMenu.getEncryptionKey)
+        token = f.encrypt(byte_pw)
+        create_profile(user_value, token, profile_type)
 
 if __name__ == '__main__':
     init_db()

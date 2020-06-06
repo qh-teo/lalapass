@@ -14,9 +14,9 @@ def init_db():
     conn.commit()
 
     c.execute("""CREATE TABLE IF NOT EXISTS accounts(
-              id INTEGER primary key  autoincrement,
+              id INTEGER primary key autoincrement,
               account_user TEXT NOT NULL,
-              account_pw TEXT NOT NULL,
+              account_pw CHAR(60) NOT NULL,
               account_type TEXT NOT NULL
               )""")
         # user_id INTEGER,
@@ -29,7 +29,7 @@ def create_master(username, hashed_pw, salt):
               (None, username, hashed_pw, salt,))
     conn.commit()
     c.execute("SELECT * FROM userAccount")
-    print(c.fetchall())
+    # print(c.fetchall())
     conn.commit()
 
 
@@ -38,7 +38,13 @@ def login_verification(username, password):
     account_details = c.fetchone()
     conn.commit()
 
-    return bcrypt.checkpw(password.encode('utf8'), account_details[2])
+    verification = bcrypt.checkpw(password.encode('utf8'), account_details[2])
+
+    if verification is True:
+        return verification, account_details[0], account_details[3]
+    else:
+        return verification
+
 
 def create_profile(username, password, profile):
     c.execute("INSERT INTO accounts (id,account_user,account_pw,account_type)VALUES (?,?,?,?)",

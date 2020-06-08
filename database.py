@@ -15,14 +15,14 @@ def init_db():
 
     c.execute("""CREATE TABLE IF NOT EXISTS accounts(
               id INTEGER primary key autoincrement,
+              user_id INTEGER,
               account_user TEXT NOT NULL,
               account_pw CHAR(60) NOT NULL,
-              account_type TEXT NOT NULL
+              account_type TEXT NOT NULL,
+              FOREIGN KEY(user_id) REFERENCES userAccount(id)
               )""")
-        # user_id INTEGER,
-        # FOREIGN KEY(user_id) REFERENCES userAccount(id)
     conn.commit()
-
+  
 
 def create_master(username, hashed_pw, salt):
     c.execute("INSERT INTO userAccount (id,username,hashed_pw,salt)VALUES (?,?,?,?)",
@@ -31,7 +31,6 @@ def create_master(username, hashed_pw, salt):
     c.execute("SELECT * FROM userAccount")
     # print(c.fetchall())
     conn.commit()
-
 
 def login_verification(username, password):
     c.execute("SELECT * FROM userAccount WHERE username=?", (username,))
@@ -46,7 +45,15 @@ def login_verification(username, password):
         return verification
 
 
-def create_profile(username, password, profile):
-    c.execute("INSERT INTO accounts (id,account_user,account_pw,account_type)VALUES (?,?,?,?)",
-              (None, username, password, profile,))
+def create_profile(user_id, username, password, profile):
+    c.execute("INSERT INTO accounts (id,user_id,account_user,account_pw,account_type)VALUES (?,?,?,?,?)",
+              (None,user_id, username, password, profile,))
     conn.commit()
+
+def retrieve_profile(user_id):
+    c.execute("SELECT account_user,account_pw,account_type FROM accounts WHERE user_id=?", (user_id,))
+    account_details = c.fetchall()
+    # print(account_details)
+    # print(len(account_details))
+    conn.commit()
+    return account_details

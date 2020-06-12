@@ -1,5 +1,7 @@
 from PyQt5 import uic
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
+from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QTableWidget, QTableWidgetItem, QVBoxLayout, \
+    QLineEdit
 from database import init_db,login_verification,create_profile, retrieve_profile
 from create_acc import create_acc
 from welcome_pg import welcome_pg
@@ -7,6 +9,7 @@ from login_pg import login_pg
 from registerAccount_pg import registerAccount_pg
 from accountManager_pg import accountManager_pg
 from addProfile_pg import addProfile_pg
+from updateProfile_pg import updateProfile_pg
 import base64
 from cryptography.fernet import Fernet
 from cryptography.hazmat.backends import default_backend
@@ -15,6 +18,17 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 accountDetails = None
 profileDetails = None
+preUpdatePro = None
+updatedPro = None
+
+
+class User_profiles:
+    def __init__(self,profiles):
+        self.profiles = profiles
+
+    @property
+    def getProfiles(self):
+        return self.profiles
 
 
 class User_account:
@@ -56,15 +70,23 @@ class MainWindow(QMainWindow):
         self.accountManager_pg = accountManager_pg()
         self.stackedWidget.addWidget(self.accountManager_pg)
         self.accountManager_pg.addProfileButton.clicked.connect(self.go_to_addProfile)
+        self.accountManager_pg.profileView = QTableWidget()
+        self.accountManager_pg.profileView.doubleClicked.connect(self.on_click_profileRow)
 
         # set up add profile page
         self.addProfile_pg = addProfile_pg()
         self.stackedWidget.addWidget(self.addProfile_pg)
         self.addProfile_pg.submitButton.clicked.connect(self.add_profile)
 
+        # set up update profile page
+        self.updateProfile_pg = updateProfile_pg()
+        self.stackedWidget.addWidget(self.updateProfile_pg)
+        self.updateProfile_pg.showPwButton.clicked.connect(self.showPassword)
+        # self.updateProfile_pg.submitButton.clicked.connect(self.updateProfile_pg)
+
     # Navigational Methods
 
-    def go_to_first(self):
+    def go_to_welcome(self):
         self.stackedWidget.setCurrentIndex(0)
 
     def go_to_register(self):
@@ -74,14 +96,66 @@ class MainWindow(QMainWindow):
         self.stackedWidget.setCurrentIndex(2)
 
     def go_to_accountManager(self):
+        self.createTable()
         self.stackedWidget.setCurrentIndex(3)
-        profiles = retrieve_profile(accountDetails.getUserId)
-        # print(profiles)
-        profiles = self.decrypt_pw(profiles)
-        self.accountManager_pg.createTable(profiles)
+
 
     def go_to_addProfile(self):
         self.stackedWidget.setCurrentIndex(4)
+
+    def go_to_updateProfile(self):
+        self.stackedWidget.setCurrentIndex(5)
+
+    def showPassword(self):
+        buttonText = self.self.updateProfile_pg.showPwButton.text()
+        if buttonText == "Show Password":
+            self.updateProfile_pg.passEntry.setEchoMode(QLineEdit.Normal)
+            self.updateProfile_pg.showPwButton.setText("Hide Password")
+        elif buttonText == "Hide Password":
+            self.updateProfile_pg.passEntry.setEchoMode(QLineEdit.Password)
+            self.updateProfile_pg.showPwButton.setText("Show Password")
+
+
+
+
+    def createTable(self):
+        profiles = retrieve_profile(accountDetails.getUserId)
+        profiles = self.decrypt_pw(profiles)
+
+        header_labels = ['Username', 'Password', 'Account Type']
+        if profiles == None:
+            profiles = ['']
+        global profileDetails
+        profileDetails = User_profiles(profiles)
+        self.accountManager_pg.profileView.clearContents()
+        self.accountManager_pg.profileView.setRowCount(len(profiles))
+        self.accountManager_pg.profileView.setColumnCount(len(header_labels))
+        self.accountManager_pg.profileView.setHorizontalHeaderLabels(header_labels)
+        self.accountManager_pg.profileView.setSelectionBehavior(QTableWidget.SelectRows)
+        self.accountManager_pg.profileView.verticalHeader().setVisible(False)
+        #loads table
+        for i, profile in enumerate(profiles):
+            self.accountManager_pg.profileView.setItem(i, 0, QTableWidgetItem(profile[0]))
+            self.accountManager_pg.profileView.setItem(i, 1, QTableWidgetItem(profile[1]))
+            self.accountManager_pg.profileView.setItem(i, 2, QTableWidgetItem(profile[2]))
+
+        self.accountManager_pg.verticalLayout = QVBoxLayout()
+        self.accountManager_pg.verticalLayout.addWidget(self.accountManager_pg.label)
+        self.accountManager_pg.verticalLayout.addWidget(self.accountManager_pg.profileView)
+        self.accountManager_pg.verticalLayout.addWidget(self.accountManager_pg.addProfileButton)
+        self.accountManager_pg.verticalLayout.addWidget(self.accountManager_pg.deleteProfileButton)
+        self.accountManager_pg.verticalLayout.addWidget(self.accountManager_pg.logoutButton)
+        self.accountManager_pg.setLayout(self.accountManager_pg.verticalLayout)
+        self.accountManager_pg.show()
+
+    @pyqtSlot()
+    def on_click_profileRow(self):
+        indexes = self.accountManager_pg.profileView.selectionModel().selectedRows()
+        for index in sorted(indexes):
+            self.updateProfile_pg.userEntry.setText(profileDetails.getProfiles[index.row()][0])
+            self.updateProfile_pg.passEntry.setText(profileDetails.getProfiles[index.row()][1])
+            self.updateProfile_pg.protypeEntry.setText(profileDetails.getProfiles[index.row()][2])
+            self.go_to_updateProfile()
 
     def registering(self):
         user_value = self.registerAccount_pg.userEntry.text()
@@ -98,7 +172,7 @@ class MainWindow(QMainWindow):
             self.registerAccount_pg.userEntry.clear()
             self.registerAccount_pg.passEntry.clear()
             self.registerAccount_pg.repassEntry.clear()
-            self.go_to_first()
+            self.go_to_welcome()
         user_value = None
         pw_value = None
         repass_value =None
@@ -108,6 +182,7 @@ class MainWindow(QMainWindow):
     def logging_in(self):
         user_value = self.login_pg.userEntry.text()
         pw_value = self.login_pg.passEntry.text()
+
         loginSuccess = login_verification(user_value, pw_value)
         if loginSuccess[0] is True:
             encryptionKey = self.generateEncryptionKey(user_value, pw_value, loginSuccess[2])
@@ -144,9 +219,20 @@ class MainWindow(QMainWindow):
         token = f.encrypt(byte_pw)
         create_profile(accountDetails.getUserId,user_value, token, profile_type)
 
+
         user_value = None
         pw_value = None
         profile_type = None
+        self.addProfile_pg.userEntry.clear()
+        self.addProfile_pg.passEntry.clear()
+        self.addProfile_pg.protypeEntry.clear()
+
+        # profiles = retrieve_profile(accountDetails.getUserId)
+        # profiles = self.decrypt_pw(profiles)
+        # self.createTable(profiles)
+        # self.accountManager_pg.profileView.doubleClicked.connect(self.on_click_profileRow)
+        self.go_to_accountManager()
+
 
     def decrypt_pw(self, profiles):
         for i, profile in enumerate(profiles):

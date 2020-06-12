@@ -6,53 +6,13 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>618</width>
+    <width>600</width>
     <height>463</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="QWidget" name="verticalLayoutWidget">
-   <property name="geometry">
-    <rect>
-     <x>440</x>
-     <y>310</y>
-     <width>160</width>
-     <height>112</height>
-    </rect>
-   </property>
-   <layout class="QVBoxLayout" name="verticalLayout">
-    <item>
-     <widget class="QPushButton" name="addProfileButton">
-      <property name="text">
-       <string>Add Profile</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="deleteProfileButton">
-      <property name="text">
-       <string>Delete Profile</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="updateProfileButton">
-      <property name="text">
-       <string>Update Profile</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="pushButton_3">
-      <property name="text">
-       <string>Logout</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
@@ -72,18 +32,57 @@
     <string>Account Management</string>
    </property>
   </widget>
-  <widget class="QWidget" name="horizontalLayoutWidget">
+  <widget class="QWidget" name="verticalLayoutWidget">
    <property name="geometry">
     <rect>
-     <x>20</x>
-     <y>50</y>
-     <width>301</width>
-     <height>161</height>
+     <x>10</x>
+     <y>60</y>
+     <width>451</width>
+     <height>331</height>
     </rect>
    </property>
-   <layout class="QHBoxLayout" name="horizontalLayout">
+   <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <widget class="QTableView" name="tableView"/>
+     <widget class="QTableView" name="profileView">
+      <property name="editTriggers">
+       <set>QAbstractItemView::DoubleClicked</set>
+      </property>
+      <property name="alternatingRowColors">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QPushButton" name="addProfileButton">
+        <property name="text">
+         <string>Add Profile</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="updateProfileButton">
+        <property name="text">
+         <string>Update Profile</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="deleteProfileButton">
+        <property name="text">
+         <string>Delete Profile</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="logoutButton">
+        <property name="text">
+         <string>Logout</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>

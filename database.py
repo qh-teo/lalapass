@@ -1,7 +1,7 @@
 import sqlite3
 import bcrypt
 conn = sqlite3.connect('lalapass.db')
-
+# https://www.tutorialspoint.com/sqlite/sqlite_update_query.htm
 c = conn.cursor()
 
 def init_db():
@@ -51,9 +51,17 @@ def create_profile(user_id, username, password, profile):
     conn.commit()
 
 def retrieve_profile(user_id):
-    c.execute("SELECT account_user,account_pw,account_type FROM accounts WHERE user_id=?", (user_id,))
+    c.execute("SELECT id,account_user,account_pw,account_type FROM accounts WHERE user_id=?", (user_id,))
     account_details = c.fetchall()
     # print(account_details)
     # print(len(account_details))
     conn.commit()
     return account_details
+
+def update_profile(profileId,username, password, profile_type):
+    # '''UPDATE books SET price = ? WHERE id = ?''', (newPrice, book_id)
+    # "(id,user_id,account_user,account_pw,account_type)VALUES (?,?,?,?,?)"
+    c.execute("UPDATE accounts SET account_user=?, account_pw=?, account_type=? WHERE ID=?",
+              (username, password, profile_type, profileId,))
+    conn.commit()
+

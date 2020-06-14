@@ -50,18 +50,22 @@ def create_profile(user_id, username, password, profile):
               (None,user_id, username, password, profile,))
     conn.commit()
 
+
 def retrieve_profile(user_id):
     c.execute("SELECT id,account_user,account_pw,account_type FROM accounts WHERE user_id=?", (user_id,))
     account_details = c.fetchall()
-    # print(account_details)
-    # print(len(account_details))
     conn.commit()
     return account_details
 
-def update_profile(profileId,username, password, profile_type):
-    # '''UPDATE books SET price = ? WHERE id = ?''', (newPrice, book_id)
-    # "(id,user_id,account_user,account_pw,account_type)VALUES (?,?,?,?,?)"
+
+def update_profile(profileId, username, password, profile_type):
     c.execute("UPDATE accounts SET account_user=?, account_pw=?, account_type=? WHERE ID=?",
               (username, password, profile_type, profileId,))
+    conn.commit()
+
+
+def delete_profile(profileId):
+    # """DELETE from SqliteDb_developers where id = ?"""
+    c.execute("DELETE from accounts WHERE ID=?", (profileId,))
     conn.commit()
 

@@ -2,7 +2,7 @@ from PyQt5 import uic
 from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QTableWidget, QTableWidgetItem, QVBoxLayout, \
     QLineEdit
-from database import init_db,login_verification,create_profile, retrieve_profile, update_profile
+from database import init_db,login_verification,create_profile, retrieve_profile, update_profile, delete_profile
 from create_acc import create_acc
 from welcome_pg import welcome_pg
 from login_pg import login_pg
@@ -49,8 +49,6 @@ class Profile_Id:
     @property
     def getProfileId(self):
         return self.profileId
-
-
 
 
 class MainWindow(QMainWindow):
@@ -107,7 +105,6 @@ class MainWindow(QMainWindow):
         self.createTable()
         self.stackedWidget.setCurrentIndex(3)
 
-
     def go_to_addProfile(self):
         self.stackedWidget.setCurrentIndex(4)
 
@@ -115,6 +112,7 @@ class MainWindow(QMainWindow):
         self.stackedWidget.setCurrentIndex(5)
 
     def showPassword(self):
+        # allows user to view password in plaintext
         buttonText = self.updateProfile_pg.showPwButton.text()
         if buttonText == "Show Password":
             self.updateProfile_pg.passEntry.setEchoMode(QLineEdit.Normal)
@@ -138,7 +136,6 @@ class MainWindow(QMainWindow):
                              "Your profile has been updated, you will now be brought to the previous page",
                              QMessageBox.Ok)
         self.createTable()
-
 
     def createTable(self):
         profiles = retrieve_profile(accountDetails.getUserId)

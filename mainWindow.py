@@ -2,7 +2,8 @@ from PyQt5 import uic
 from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QTableWidget, QTableWidgetItem, QVBoxLayout, \
     QLineEdit
-from database import init_db,login_verification,create_profile, retrieve_profile, update_profile, delete_profile
+from database import init_db, login_verification, create_profile, retrieve_profile, update_profile, \
+    delete_profile_from_db
 from create_acc import create_acc
 from welcome_pg import welcome_pg
 from login_pg import login_pg
@@ -20,6 +21,7 @@ accountDetails = None
 profileDetails = None
 userprofileId = None
 
+
 class User_account:
     def __init__(self, user_id, encryptionKey):
         self.user_id = user_id
@@ -35,15 +37,16 @@ class User_account:
 
 
 class User_profiles:
-    def __init__(self,profiles):
+    def __init__(self, profiles):
         self.profiles = profiles
 
     @property
     def getProfiles(self):
         return self.profiles
 
+
 class Profile_Id:
-    def __init__(self,profileId):
+    def __init__(self, profileId):
         self.profileId = profileId
 
     @property
@@ -78,6 +81,8 @@ class MainWindow(QMainWindow):
         self.accountManager_pg.addProfileButton.clicked.connect(self.go_to_addProfile)
         self.accountManager_pg.profileView = QTableWidget()
         self.accountManager_pg.profileView.doubleClicked.connect(self.on_click_profileRow)
+        self.accountManager_pg.deleteProfileButton.clicked.connect(self.deleteProfile)
+        self.accountManager_pg.logoutButton.clicked.connect(self.logoutAccount)
 
         # set up add profile page
         self.addProfile_pg = addProfile_pg()
@@ -89,30 +94,30 @@ class MainWindow(QMainWindow):
         self.stackedWidget.addWidget(self.updateProfile_pg)
         self.updateProfile_pg.showPwButton.clicked.connect(self.showPassword)
         self.updateProfile_pg.submitButton.clicked.connect(self.updateProfile)
+        self.updateProfile_pg.cancelButton.clicked.connect(self.cancelUpdate)
 
     # Navigational Methods
 
-    def go_to_welcome(self):
+    def go_to_welcome(self):  # goes to welcome page
         self.stackedWidget.setCurrentIndex(0)
 
-    def go_to_register(self):
+    def go_to_register(self):  # goes to register acc page
         self.stackedWidget.setCurrentIndex(1)
 
-    def go_to_login(self):
+    def go_to_login(self):  # goes to login page
         self.stackedWidget.setCurrentIndex(2)
 
-    def go_to_accountManager(self):
+    def go_to_accountManager(self):  # goes to account manager page
         self.createTable()
         self.stackedWidget.setCurrentIndex(3)
 
-    def go_to_addProfile(self):
+    def go_to_addProfile(self):  # goes to add profile page
         self.stackedWidget.setCurrentIndex(4)
 
-    def go_to_updateProfile(self):
+    def go_to_updateProfile(self):  # goes to update profile page
         self.stackedWidget.setCurrentIndex(5)
 
-    def showPassword(self):
-        # allows user to view password in plaintext
+    def showPassword(self):  # allows user to view password in plaintext
         buttonText = self.updateProfile_pg.showPwButton.text()
         if buttonText == "Show Password":
             self.updateProfile_pg.passEntry.setEchoMode(QLineEdit.Normal)
@@ -121,28 +126,21 @@ class MainWindow(QMainWindow):
             self.updateProfile_pg.passEntry.setEchoMode(QLineEdit.Password)
             self.updateProfile_pg.showPwButton.setText("Show Password")
 
-    def updateProfile(self):
-        user_value = self.updateProfile_pg.userEntry.text()
-        pw_value = self.updateProfile_pg.passEntry.text()
-        profile_type = self.updateProfile_pg.protypeEntry.text()
-
-        byte_pw = bytes(pw_value.encode('utf8'))
-        f = Fernet(accountDetails.getEncryptionKey)
-        token = f.encrypt(byte_pw)
-        profile_id = userprofileId.getProfileId
-
-        update_profile(profile_id, user_value, token, profile_type)
-        QMessageBox.question(self, "Profile Updated",
-                             "Your profile has been updated, you will now be brought to the previous page",
+    def logoutAccount(self):
+        QMessageBox.question(self, "Logout",
+                             "You will now be logged out. Please confirm if you will want to confirm.",
                              QMessageBox.Ok)
-        self.createTable()
+        self.stackedWidget.setCurrentIndex(0)
 
-    def createTable(self):
+
+
+
+    def createTable(self):  # generates profiles under account user
         profiles = retrieve_profile(accountDetails.getUserId)
         profiles = self.decrypt_pw(profiles)
 
         header_labels = ['Username', 'Password', 'Account Type']
-        if profiles == None:
+        if profiles is None:
             profiles = ['']
         global profileDetails
         profileDetails = User_profiles(profiles)
@@ -152,7 +150,7 @@ class MainWindow(QMainWindow):
         self.accountManager_pg.profileView.setHorizontalHeaderLabels(header_labels)
         self.accountManager_pg.profileView.setSelectionBehavior(QTableWidget.SelectRows)
         self.accountManager_pg.profileView.verticalHeader().setVisible(False)
-        #loads table
+        # loads table
         for i, profile in enumerate(profiles):
             self.accountManager_pg.profileView.setItem(i, 0, QTableWidgetItem(profile[1]))
             self.accountManager_pg.profileView.setItem(i, 1, QTableWidgetItem(profile[2]))
@@ -170,13 +168,12 @@ class MainWindow(QMainWindow):
     @pyqtSlot()
     def on_click_profileRow(self):
         indexes = self.accountManager_pg.profileView.selectionModel().selectedRows()
+        global userprofileId
         for index in sorted(indexes):
             self.updateProfile_pg.userEntry.setText(profileDetails.getProfiles[index.row()][1])
             self.updateProfile_pg.passEntry.setText(profileDetails.getProfiles[index.row()][2])
             self.updateProfile_pg.protypeEntry.setText(profileDetails.getProfiles[index.row()][3])
-            global userprofileId
             userprofileId = Profile_Id(profileDetails.getProfiles[index.row()][0])
-            # print(userprofileId.getProfileId)
             self.go_to_updateProfile()
 
     def registering(self):
@@ -197,7 +194,7 @@ class MainWindow(QMainWindow):
             self.go_to_welcome()
         user_value = None
         pw_value = None
-        repass_value =None
+        repass_value = None
 
     # Log in and verification methods
 
@@ -239,7 +236,7 @@ class MainWindow(QMainWindow):
         byte_pw = bytes(pw_value.encode('utf8'))
         f = Fernet(accountDetails.getEncryptionKey)
         token = f.encrypt(byte_pw)
-        create_profile(accountDetails.getUserId,user_value, token, profile_type)
+        create_profile(accountDetails.getUserId, user_value, token, profile_type)
         QMessageBox
         QMessageBox.question(self, "Profile Created",
                              "Your profile has been created, you will now be brought to the previous page",
@@ -252,7 +249,6 @@ class MainWindow(QMainWindow):
         self.addProfile_pg.protypeEntry.clear()
         self.go_to_accountManager()
 
-
     def decrypt_pw(self, profiles):
         for i, profile in enumerate(profiles):
             f = Fernet(accountDetails.getEncryptionKey)
@@ -262,6 +258,47 @@ class MainWindow(QMainWindow):
             profile[2] = decodePw
             profiles[i] = profile
         return profiles
+
+    def updateProfile(self):  # updating user-selected profile
+        user_value = self.updateProfile_pg.userEntry.text()
+        pw_value = self.updateProfile_pg.passEntry.text()
+        profile_type = self.updateProfile_pg.protypeEntry.text()
+
+        byte_pw = bytes(pw_value.encode('utf8'))
+        f = Fernet(accountDetails.getEncryptionKey)
+        token = f.encrypt(byte_pw)
+        profile_id = userprofileId.getProfileId
+
+        update_profile(profile_id, user_value, token, profile_type)
+        QMessageBox.question(self, "Profile Updated",
+                             "Your profile has been updated, you will now be brought to the previous page",
+                             QMessageBox.Ok)
+        self.createTable()
+
+    def deleteProfile(self):  # gets profile id and prompts user if they want to delete it
+        indexes = self.accountManager_pg.profileView.selectionModel().selectedRows()
+        global userprofileId
+        for index in sorted(indexes):
+            userprofileId = Profile_Id(profileDetails.getProfiles[index.row()][0])
+
+            result = QMessageBox.question(self, "Delete Profile?",
+                                          "Selected profile \'" + profileDetails.getProfiles[index.row()][1] +
+                                          "\' will be deleted. Are you sure?",
+                                          QMessageBox.Ok | QMessageBox.Cancel)
+            if result == QMessageBox.Ok:
+                delete_profile_from_db(userprofileId.getProfileId)
+                result = QMessageBox.question(self, "Profile deleted",
+                                              "Profile deleted.",
+                                              QMessageBox.Ok | QMessageBox.Cancel)
+                self.createTable()
+                self.stackedWidget.setCurrentIndex(3)
+
+    def cancelUpdate(self):  # cancel update message box
+        result = QMessageBox.question(self, "Stop updating",
+                                      "Your profile will not be updated, are you sure?",
+                                      QMessageBox.Ok | QMessageBox.Cancel)
+        if result == QMessageBox.Ok:
+            self.stackedWidget.setCurrentIndex(3)
 
 
 if __name__ == '__main__':

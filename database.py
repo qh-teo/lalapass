@@ -64,7 +64,7 @@ def update_profile(profileId, username, password, profile_type):
     conn.commit()
 
 
-def delete_profile(profileId):
+def delete_profile_from_db(profileId):
     # """DELETE from SqliteDb_developers where id = ?"""
     c.execute("DELETE from accounts WHERE ID=?", (profileId,))
     conn.commit()
